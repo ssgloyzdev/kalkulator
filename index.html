@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#0b141a">
+<title>Kalkulator</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#0b141a;color:#e9edef;font-family:system-ui,sans-serif}
+.app{display:flex;flex-direction:column;height:100%;max-width:420px;margin:0 auto;padding:12px}
+.screen{flex:0 0 auto;background:#111b21;border-radius:16px;padding:16px;margin-bottom:12px;min-height:130px;display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-end;overflow:hidden}
+.hist{font-size:14px;color:#8696a0;min-height:18px;word-break:break-all;text-align:right}
+.expr{font-size:34px;font-weight:600;word-break:break-all;text-align:right;margin-top:6px}
+.res{font-size:20px;color:#25d366;min-height:26px;margin-top:2px}
+.pad{flex:1;display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr;gap:10px}
+button{border:0;border-radius:16px;font-size:24px;font-weight:600;color:#e9edef;background:#202c33;transition:transform .06s,filter .1s}
+button:active{transform:scale(.94);filter:brightness(1.3)}
+.op{background:#005c4b}
+.fn{background:#2a3942;color:#25d366}
+.eq{background:#25d366;color:#0b141a}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="screen">
+<div class="hist" id="hist"></div>
+<div class="expr" id="expr">0</div>
+<div class="res" id="res"></div>
+</div>
+<div class="pad" id="pad"></div>
+</div>
+<script>
+const keys=[
+['C','fn'],['(','fn'],[')','fn'],['÷','op'],
+['7',''],['8',''],['9',''],['×','op'],
+['4',''],['5',''],['6',''],['-','op'],
+['1',''],['2',''],['3',''],['+','op'],
+['%','fn'],['0',''],['.',''],['=','eq']
+]
+let expr=''
+let hist=''
+const $=id=>document.getElementById(id)
+const pad=$('pad')
+
+keys.forEach(([k,c])=>{
+const b=document.createElement('button')
+b.textContent=k
+if(c)b.className=c
+b.onclick=()=>press(k)
+pad.appendChild(b)
+})
+
+const del=document.createElement('button')
+
+function norm(s){return s.replace(/×/g,'*').replace(/÷/g,'/')}
+
+function calc(s){
+const e=norm(s).replace(/(\d+(?:\.\d+)?)%/g,'($1/100)')
+if(!/^[0-9+\-*/().\s]+$/.test(e))throw 0
+const r=Function('"use strict";return ('+e+')')()
+if(!Number.isFinite(r))throw 0
+return Number(r.toFixed(10))
+}
+
+function draw(){
+$('expr').textContent=expr||'0'
+$('hist').textContent=hist
+try{
+const r=expr&&/[0-9)%]$/.test(expr)?calc(expr):''
+$('res').textContent=r!==''&&String(r)!==expr?'= '+r:''
+}catch(e){$('res').textContent=''}
+}
+
+function press(k){
+if(k==='C'){expr='';hist=''}
+else if(k==='='){
+if(!expr)return
+try{
+const r=calc(expr)
+hist=expr+' ='
+expr=String(r)
+}catch(e){$('res').textContent='Format salah'}
+}else expr+=k
+draw()
+}
+
+$('expr').onclick=()=>{expr=expr.slice(0,-1);draw()}
+
+document.addEventListener('keydown',e=>{
+const m={'*':'×','/':'÷'}
+if(/^[0-9+\-.()%]$/.test(e.key))press(e.key)
+else if(m[e.key])press(m[e.key])
+else if(e.key==='Enter'||e.key==='=')press('=')
+else if(e.key==='Backspace'){expr=expr.slice(0,-1);draw()}
+else if(e.key==='Escape')press('C')
+})
+
+draw()
+</script>
+</body>
+</html>
